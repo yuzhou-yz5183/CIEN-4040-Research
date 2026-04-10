@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+import re
 
 
 def _validate_model_inputs(v, A, B, gamma):
@@ -215,7 +216,9 @@ def simulate_two_class(
 def _figure_path_from_title(title):
     figure_dir = Path(__file__).resolve().parent / "figure"
     figure_dir.mkdir(exist_ok=True)
-    return figure_dir / f"{title}.png"
+    safe_title = re.sub(r"[^A-Za-z0-9._-]+", "_", title).strip("._")
+    safe_title = safe_title or "figure"
+    return figure_dir / f"{safe_title}.png"
 
 
 def _clip_density_for_plot(density_map, vmin=0.0, vmax=1.0):
@@ -297,13 +300,22 @@ def plot_class_heatmap(
         plt.close()
 
 
-def plot_slow_car_heatmap(x, t_grid, f_history, save_path=None, show=True, vmin=0.0, vmax=1.0):
+def plot_slow_car_heatmap(
+    x,
+    t_grid,
+    f_history,
+    title="Slow Car Density Heat Map",
+    save_path=None,
+    show=True,
+    vmin=0.0,
+    vmax=1.0,
+):
     plot_class_heatmap(
         x,
         t_grid,
         f_history,
         class_index=0,
-        title="Slow Car Density Heat Map",
+        title=title,
         colorbar_label="Slow car density",
         save_path=save_path,
         show=show,
@@ -312,13 +324,22 @@ def plot_slow_car_heatmap(x, t_grid, f_history, save_path=None, show=True, vmin=
     )
 
 
-def plot_fast_car_heatmap(x, t_grid, f_history, save_path=None, show=True, vmin=0.0, vmax=1.0):
+def plot_fast_car_heatmap(
+    x,
+    t_grid,
+    f_history,
+    title="Fast Car Density Heat Map",
+    save_path=None,
+    show=True,
+    vmin=0.0,
+    vmax=1.0,
+):
     plot_class_heatmap(
         x,
         t_grid,
         f_history,
         class_index=1,
-        title="Fast Car Density Heat Map",
+        title=title,
         colorbar_label="Fast car density",
         save_path=save_path,
         show=show,
@@ -351,29 +372,35 @@ def plot_final_profiles(x, rho_map, vmin=0.0, vmax=1.0, save_path=None, show=Tru
 
 
 if __name__ == "__main__":
-    x, t_grid, f_history, rho_map = simulate_two_class(J=200, T=1.0, A12=0.1, B21=0.2)
+    # Tune the parameters here to explore different scenarios. The current defaults are just a starting point.
+    A12=0.1
+    B21=0.1
+    gamma=((0.1, 0.2), (0.3, 0.4))
+    x, t_grid, f_history, rho_map = simulate_two_class(J=200, T=1.0, A12=A12, B21=B21,  gamma=gamma)
 
-    total_title = "Total density heat map"
-    slow_title = "Slow Car Density Heat Map"
-    fast_title = "Fast Car Density Heat Map"
+    total_title = "Total density heat map with parameters ({}, {}, {})".format(A12, B21, gamma)
+    slow_title = "Slow Car Density Heat Map with parameters ({}, {}, {})".format(A12, B21, gamma)
+    fast_title = "Fast Car Density Heat Map with parameters ({}, {}, {})".format(A12, B21, gamma)
 
     plot_heatmap(
         x,
         t_grid,
         rho_map,
         title=total_title,
-        save_path=_figure_path_from_title(total_title),
+        save_path=_figure_path_from_title("Total with {},{},{}".format(A12, B21, gamma)),
     )
     plot_slow_car_heatmap(
         x,
         t_grid,
         f_history,
-        save_path=_figure_path_from_title(slow_title),
+        title=slow_title,
+        save_path=_figure_path_from_title("Slow with {},{},{}".format(A12, B21, gamma)),
     )
     plot_fast_car_heatmap(
         x,
         t_grid,
         f_history,
-        save_path=_figure_path_from_title(fast_title),
+        title=fast_title,
+        save_path=_figure_path_from_title("Fast with {},{},{}".format(A12, B21, gamma)),
     )
     plot_final_profiles(x, rho_map)
